@@ -1,8 +1,55 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { getApiBaseUrl, testNetworkConnection, debugNetworkConfig } from './networkConfig';
+
+// Cross-platform storage solution
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const isWeb = Platform.OS === 'web';
+
+// Cross-platform storage wrapper
+const storage = {
+  async setItem(key, value) {
+    try {
+      if (isWeb) {
+        await AsyncStorage.setItem(key, value);
+      } else {
+        await SecureStore.setItemAsync(key, value);
+      }
+    } catch (error) {
+      console.error(`Error setting ${key}:`, error);
+      throw error;
+    }
+  },
+
+  async getItem(key) {
+    try {
+      if (isWeb) {
+        return await AsyncStorage.getItem(key);
+      } else {
+        return await SecureStore.getItemAsync(key);
+      }
+    } catch (error) {
+      console.error(`Error getting ${key}:`, error);
+      return null;
+    }
+  },
+
+  async removeItem(key) {
+    try {
+      if (isWeb) {
+        await AsyncStorage.removeItem(key);
+      } else {
+        await SecureStore.deleteItemAsync(key);
+      }
+    } catch (error) {
+      console.error(`Error removing ${key}:`, error);
+      throw error;
+    }
+  }
+};
 
 // API Configuration
 const API_BASE_URL = getApiBaseUrl();
@@ -10,6 +57,8 @@ const API_BASE_URL = getApiBaseUrl();
 // Debug network configuration on app start
 if (__DEV__) {
   console.log('🚀 Initializing API service...');
+  console.log(`📱 Platform: ${Platform.OS}`);
+  console.log(`💾 Storage: ${isWeb ? 'AsyncStorage (Web)' : 'SecureStore (Mobile)'}`);
   debugNetworkConfig();
 }
 
@@ -110,7 +159,7 @@ const USER_KEY = 'currentUser';
 // Get auth token from secure storage
 const getAuthToken = async () => {
   try {
-    return await SecureStore.getItemAsync(TOKEN_KEY);
+    return await storage.getItem(TOKEN_KEY);
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;
@@ -121,9 +170,9 @@ const getAuthToken = async () => {
 const setAuthToken = async (token) => {
   try {
     if (token) {
-      await SecureStore.setItemAsync(TOKEN_KEY, token);
+      await storage.setItem(TOKEN_KEY, token);
     } else {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await storage.removeItem(TOKEN_KEY);
     }
   } catch (error) {
     console.error('Error setting auth token:', error);
@@ -133,7 +182,7 @@ const setAuthToken = async (token) => {
 // Get refresh token
 const getRefreshToken = async () => {
   try {
-    return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    return await storage.getItem(REFRESH_TOKEN_KEY);
   } catch (error) {
     console.error('Error getting refresh token:', error);
     return null;
@@ -144,9 +193,9 @@ const getRefreshToken = async () => {
 const setRefreshToken = async (token) => {
   try {
     if (token) {
-      await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
+      await storage.setItem(REFRESH_TOKEN_KEY, token);
     } else {
-      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      await storage.removeItem(REFRESH_TOKEN_KEY);
     }
   } catch (error) {
     console.error('Error setting refresh token:', error);
@@ -156,7 +205,7 @@ const setRefreshToken = async (token) => {
 // Get current user
 const getCurrentUser = async () => {
   try {
-    const userStr = await SecureStore.getItemAsync(USER_KEY);
+    const userStr = await storage.getItem(USER_KEY);
     return userStr ? JSON.parse(userStr) : null;
   } catch (error) {
     console.error('Error getting current user:', error);
@@ -168,9 +217,9 @@ const getCurrentUser = async () => {
 const setCurrentUser = async (user) => {
   try {
     if (user) {
-      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+      await storage.setItem(USER_KEY, JSON.stringify(user));
     } else {
-      await SecureStore.deleteItemAsync(USER_KEY);
+      await storage.removeItem(USER_KEY);
     }
   } catch (error) {
     console.error('Error setting current user:', error);
@@ -180,9 +229,9 @@ const setCurrentUser = async (user) => {
 // Clear all auth data
 const clearAuthData = async () => {
   try {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_KEY);
+    await storage.removeItem(TOKEN_KEY);
+    await storage.removeItem(REFRESH_TOKEN_KEY);
+    await storage.removeItem(USER_KEY);
   } catch (error) {
     console.error('Error clearing auth data:', error);
   }

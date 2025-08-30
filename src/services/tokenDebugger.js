@@ -1,5 +1,35 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi } from './api';
+
+// Cross-platform storage
+const isWeb = Platform.OS === 'web';
+const storage = {
+  async getItem(key) {
+    try {
+      if (isWeb) {
+        return await AsyncStorage.getItem(key);
+      } else {
+        return await SecureStore.getItemAsync(key);
+      }
+    } catch (error) {
+      console.error(`Error getting ${key}:`, error);
+      return null;
+    }
+  },
+  async removeItem(key) {
+    try {
+      if (isWeb) {
+        await AsyncStorage.removeItem(key);
+      } else {
+        await SecureStore.deleteItemAsync(key);
+      }
+    } catch (error) {
+      console.error(`Error removing ${key}:`, error);
+    }
+  }
+};
 
 const TOKEN_KEY = 'authToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
