@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Animatable from 'react-native-animatable';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // import { Progress } from 'react-native-progress'; // Commented out due to web compatibility issues
 import { useTheme } from '../../contexts/ThemeContext';
 import { filesApi, foldersApi } from '../../services/api';
@@ -43,7 +44,6 @@ const UploadScreen = ({ navigation, route }) => {
           setCurrentFolderPath(route.params.currentFolderPath);
         } else {
           // Fallback to AsyncStorage for shared state
-          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
           const savedPath = await AsyncStorage.getItem('currentFolderPath');
           setCurrentFolderPath(savedPath || '');
         }
@@ -89,7 +89,6 @@ const UploadScreen = ({ navigation, route }) => {
     setShowFolderSelector(false);
     
     // Save to AsyncStorage for persistence
-    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
     AsyncStorage.setItem('currentFolderPath', folder.path);
     
     Toast.show({
@@ -279,7 +278,8 @@ const UploadScreen = ({ navigation, route }) => {
   const styles = createStyles(theme, isDarkMode);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
       {/* Current Folder Display */}
       <View style={styles.currentFolderContainer}>
         <View style={styles.folderInfo}>
@@ -537,6 +537,7 @@ const UploadScreen = ({ navigation, route }) => {
         </View>
       </View>
     </Modal>
+    </View>
   );
 };
 
@@ -725,7 +726,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   changeFolderButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.primary + '20',
+    backgroundColor: `${theme.colors.primary}20`,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: theme.borderRadius.md,
@@ -780,7 +781,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
     borderBottomWidth: 1,
   },
   selectedFolderItem: {
-    backgroundColor: theme.colors.primary + '20',
+    backgroundColor: `${theme.colors.primary}20`,
   },
   folderItemText: {
     flex: 1,
