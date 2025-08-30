@@ -703,6 +703,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   currentFolderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: theme.colors.card,
     padding: 16,
     marginBottom: 16,
@@ -710,10 +711,29 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  folderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   currentFolderText: {
     fontSize: theme.fontSize.md,
     color: theme.colors.text,
     marginLeft: 8,
+    fontWeight: '500',
+  },
+  changeFolderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary + '20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.borderRadius.md,
+  },
+  changeFolderText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    marginLeft: 4,
     fontWeight: '500',
   },
   // Modal styles
