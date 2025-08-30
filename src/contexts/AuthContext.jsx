@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authApi, getCurrentUser } from '../services/api';
+import { authApi, getCurrentUser, isNetworkError } from '../services/api';
 import Toast from 'react-native-toast-message';
 
 const AuthContext = createContext({});
@@ -77,10 +77,19 @@ export const AuthProvider = ({ children }) => {
         throw new Error(response.message || 'Login failed');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      let errorMessage = 'Login failed';
+      let errorTitle = 'Login Failed';
+      
+      if (error.isNetworkError || isNetworkError(error)) {
+        errorTitle = 'Connection Error';
+        errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
+      } else {
+        errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      }
+      
       Toast.show({
         type: 'error',
-        text1: 'Login Failed',
+        text1: errorTitle,
         text2: errorMessage
       });
       return { success: false, error: errorMessage };
@@ -107,10 +116,19 @@ export const AuthProvider = ({ children }) => {
         throw new Error(response.message || 'Registration failed');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      let errorMessage = 'Registration failed';
+      let errorTitle = 'Registration Failed';
+      
+      if (error.isNetworkError || isNetworkError(error)) {
+        errorTitle = 'Connection Error';
+        errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
+      } else {
+        errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      }
+      
       Toast.show({
         type: 'error',
-        text1: 'Registration Failed',
+        text1: errorTitle,
         text2: errorMessage
       });
       return { success: false, error: errorMessage };

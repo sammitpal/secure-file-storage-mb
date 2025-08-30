@@ -1,11 +1,23 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+import { getApiBaseUrl } from './networkConfig';
 
-// API Configuration - Update this to your backend URL
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3001/api' 
-  : 'https://your-production-api.com/api';
+// API Configuration
+const API_BASE_URL = getApiBaseUrl();
+
+// Network error helper
+const isNetworkError = (error) => {
+  return !error.response && (
+    error.code === 'NETWORK_ERROR' ||
+    error.code === 'ECONNREFUSED' ||
+    error.code === 'ENOTFOUND' ||
+    error.message?.includes('Network Error') ||
+    error.message?.includes('timeout') ||
+    error.message?.includes('connect ECONNREFUSED')
+  );
+};
 
 // Create axios instance
 const api = axios.create({
@@ -120,6 +132,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Handle network errors specifically
+    if (isNetworkError(error)) {
+      const networkError = new Error('Network connection failed. Please check your internet connection and try again.');
+      networkError.isNetworkError = true;
+      networkError.originalError = error;
+      return Promise.reject(networkError);
+    }
+
     const originalRequest = error.config;
     
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh')) {
@@ -325,5 +345,7 @@ export {
   setAuthToken,
   getCurrentUser,
   setCurrentUser,
-  clearAuthData
+  clearAuthData,
+  isNetworkError,
+  API_BASE_URL
 }; 

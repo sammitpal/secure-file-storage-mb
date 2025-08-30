@@ -224,6 +224,23 @@ const LoginScreen = ({ navigation }) => {
                     />
                   </TouchableOpacity>
                 </View>
+
+                {/* Network Test Link (Development Only) */}
+                {__DEV__ && (
+                  <View style={styles.networkTestContainer}>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('NetworkTest')}
+                      style={styles.networkTestLink}
+                    >
+                      <Ionicons 
+                        name="wifi-outline" 
+                        size={16} 
+                        color={theme.colors.textSecondary} 
+                      />
+                      <Text style={styles.networkTestText}>Network Test</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </BlurView>
           </Animatable.View>
@@ -396,6 +413,21 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: '600',
     marginRight: theme.spacing.xs,
+  },
+  networkTestContainer: {
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+  },
+  networkTestLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+  },
+  networkTestText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.xs,
   },
 });
 
