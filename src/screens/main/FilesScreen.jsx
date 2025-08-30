@@ -285,38 +285,6 @@ const FilesScreen = () => {
     }
   };
 
-  const createFolder = async () => {
-    if (!newFolderName.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Name',
-        text2: 'Please enter a folder name'
-      });
-      return;
-    }
-
-    try {
-      const currentFolderPath = currentPath.length === 0 ? '' : currentPath.map(p => p.name).join('/');
-      await foldersApi.createFolder(newFolderName.trim(), currentFolderPath);
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Folder Created',
-        text2: `"${newFolderName}" has been created`
-      });
-
-      setNewFolderName('');
-      setShowCreateFolder(false);
-      fetchData(); // Refresh the list
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Create Failed',
-        text2: 'Could not create folder'
-      });
-    }
-  };
-
   const getFileIcon = (fileName) => {
     if (!fileName || typeof fileName !== 'string') {
       return { name: 'document', color: '#6b7280' }; // Default icon
