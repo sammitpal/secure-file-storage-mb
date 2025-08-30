@@ -64,23 +64,6 @@ const NetworkDebugger = ({ visible, onClose }) => {
     }
   };
 
-  const testAuthentication = async () => {
-    setAuthTesting(true);
-    setAuthResults(null);
-
-    try {
-      const result = await debugAuthentication();
-      setAuthResults(result);
-    } catch (error) {
-      setAuthResults({
-        error: error.message,
-        recommendations: ['Check console logs for detailed error information']
-      });
-    } finally {
-      setAuthTesting(false);
-    }
-  };
-
   const copyToClipboard = (text) => {
     Clipboard.setString(text);
     Alert.alert('Copied', 'Information copied to clipboard');
