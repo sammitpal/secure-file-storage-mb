@@ -21,12 +21,34 @@ import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
-const UploadScreen = ({ navigation }) => {
+const UploadScreen = ({ navigation, route }) => {
   const { theme, isDarkMode } = useTheme();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [currentFolderPath, setCurrentFolderPath] = useState('');
+
+  // Get current folder path from route params or AsyncStorage
+  useEffect(() => {
+    const getCurrentPath = async () => {
+      try {
+        // Try to get from route params first
+        if (route?.params?.currentFolderPath) {
+          setCurrentFolderPath(route.params.currentFolderPath);
+        } else {
+          // Fallback to AsyncStorage for shared state
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          const savedPath = await AsyncStorage.getItem('currentFolderPath');
+          setCurrentFolderPath(savedPath || '');
+        }
+      } catch (error) {
+        console.log('Error getting current folder path:', error);
+        setCurrentFolderPath('');
+      }
+    };
+    
+    getCurrentPath();
+  }, [route?.params?.currentFolderPath]);
 
   const pickDocument = async () => {
     try {
@@ -209,6 +231,14 @@ const UploadScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Current Folder Display */}
+      <View style={styles.currentFolderContainer}>
+        <Ionicons name="folder" size={20} color={theme.colors.primary} />
+        <Text style={styles.currentFolderText}>
+          Uploading to: {currentFolderPath || 'Root Folder'}
+        </Text>
+      </View>
+
       {/* Upload Options */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Choose Upload Method</Text>
@@ -544,6 +574,22 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
     height: '100%',
     borderRadius: 4,
     transition: 'width 0.3s ease',
+  },
+  currentFolderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  currentFolderText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    marginLeft: 8,
+    fontWeight: '500',
   },
 });
 

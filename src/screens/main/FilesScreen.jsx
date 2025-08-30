@@ -9,7 +9,9 @@ import {
   Alert,
   Dimensions,
   ActivityIndicator,
-  Platform
+  Platform,
+  Modal,
+  TextInput
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
@@ -30,6 +32,8 @@ const FilesScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({ totalFiles: 0, totalSize: 0, totalFolders: 0 });
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   const currentFolderPath = currentPath.length === 0 ? '' : currentPath.map(p => p.name).join('/');
 
@@ -66,16 +70,46 @@ const FilesScreen = () => {
     setRefreshing(false);
   }, [fetchData]);
 
-  const navigateToFolder = (folder) => {
-    setCurrentPath(prev => [...prev, { id: folder.id, name: folder.name }]);
+  const navigateToFolder = async (folder) => {
+    const newPath = [...currentPath, { id: folder.id, name: folder.name }];
+    setCurrentPath(newPath);
+    
+    // Save current folder path to AsyncStorage for UploadScreen
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const folderPath = newPath.length === 0 ? '' : newPath.map(p => p.name).join('/');
+      await AsyncStorage.setItem('currentFolderPath', folderPath);
+    } catch (error) {
+      console.log('Error saving current folder path:', error);
+    }
   };
 
-  const navigateBack = () => {
-    setCurrentPath(prev => prev.slice(0, -1));
+  const navigateBack = async () => {
+    const newPath = currentPath.slice(0, -1);
+    setCurrentPath(newPath);
+    
+    // Save current folder path to AsyncStorage
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const folderPath = newPath.length === 0 ? '' : newPath.map(p => p.name).join('/');
+      await AsyncStorage.setItem('currentFolderPath', folderPath);
+    } catch (error) {
+      console.log('Error saving current folder path:', error);
+    }
   };
 
-  const navigateToBreadcrumb = (index) => {
-    setCurrentPath(prev => prev.slice(0, index + 1));
+  const navigateToBreadcrumb = async (index) => {
+    const newPath = currentPath.slice(0, index + 1);
+    setCurrentPath(newPath);
+    
+    // Save current folder path to AsyncStorage
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const folderPath = newPath.length === 0 ? '' : newPath.map(p => p.name).join('/');
+      await AsyncStorage.setItem('currentFolderPath', folderPath);
+    } catch (error) {
+      console.log('Error saving current folder path:', error);
+    }
   };
 
   const downloadFile = async (file) => {
@@ -120,7 +154,7 @@ const FilesScreen = () => {
   const deleteFile = (file) => {
     Alert.alert(
       'Delete File',
-      `Are you sure you want to delete "${file.originalName}"?`,
+      `Are you sure you want to delete "${file.originalName || file.name || 'this file'}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -215,6 +249,70 @@ const FilesScreen = () => {
         type: 'error',
         text1: 'Share Failed',
         text2: 'Could not create share link'
+      });
+    }
+  };
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Name',
+        text2: 'Please enter a folder name'
+      });
+      return;
+    }
+
+    try {
+      const currentFolderPath = currentPath.length === 0 ? '' : currentPath.map(p => p.name).join('/');
+      await foldersApi.createFolder(newFolderName.trim(), currentFolderPath);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Folder Created',
+        text2: `"${newFolderName}" has been created`
+      });
+
+      setNewFolderName('');
+      setShowCreateFolder(false);
+      fetchData(); // Refresh the list
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Create Failed',
+        text2: 'Could not create folder'
+      });
+    }
+  };
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Name',
+        text2: 'Please enter a folder name'
+      });
+      return;
+    }
+
+    try {
+      const currentFolderPath = currentPath.length === 0 ? '' : currentPath.map(p => p.name).join('/');
+      await foldersApi.createFolder(newFolderName.trim(), currentFolderPath);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Folder Created',
+        text2: `"${newFolderName}" has been created`
+      });
+
+      setNewFolderName('');
+      setShowCreateFolder(false);
+      fetchData(); // Refresh the list
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Create Failed',
+        text2: 'Could not create folder'
       });
     }
   };
@@ -448,6 +546,56 @@ const FilesScreen = () => {
         }
         ListEmptyComponent={renderEmpty}
       />
+
+      {/* Floating Action Button for Create Folder */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setShowCreateFolder(true)}
+      >
+        <Ionicons name="add" size={24} color="white" />
+      </TouchableOpacity>
+
+      {/* Create Folder Modal */}
+      <Modal
+        visible={showCreateFolder}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCreateFolder(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Create New Folder</Text>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter folder name"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+              autoFocus={true}
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowCreateFolder(false);
+                  setNewFolderName('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.createButton]}
+                onPress={createFolder}
+              >
+                <Text style={styles.createButtonText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -576,6 +724,80 @@ const createStyles = (theme) => StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    padding: 12,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.background,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.border,
+  },
+  createButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  cancelButtonText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.md,
+    fontWeight: '600',
+  },
+  createButtonText: {
+    color: 'white',
+    fontSize: theme.fontSize.md,
+    fontWeight: '600',
   },
 });
 
