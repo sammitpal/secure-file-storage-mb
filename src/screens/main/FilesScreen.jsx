@@ -200,6 +200,9 @@ const FilesScreen = () => {
   };
 
   const getFileIcon = (fileName) => {
+    if (!fileName || typeof fileName !== 'string') {
+      return { name: 'document', color: '#6b7280' }; // Default icon
+    }
     const extension = fileName.split('.').pop()?.toLowerCase();
     
     switch (extension) {
@@ -213,24 +216,34 @@ const FilesScreen = () => {
         return { name: 'grid', color: '#16a34a' };
       case 'ppt':
       case 'pptx':
-        return { name: 'easel', color: '#ea580c' };
+        return { name: 'presentation-chart-bar', color: '#dc2626' };
       case 'jpg':
       case 'jpeg':
       case 'png':
       case 'gif':
-        return { name: 'image', color: '#8b5cf6' };
+      case 'bmp':
+      case 'webp':
+        return { name: 'photo', color: '#7c3aed' };
       case 'mp4':
       case 'avi':
       case 'mov':
-        return { name: 'videocam', color: '#ec4899' };
+      case 'wmv':
+      case 'flv':
+        return { name: 'video-camera', color: '#059669' };
       case 'mp3':
       case 'wav':
-        return { name: 'musical-notes', color: '#06b6d4' };
+      case 'flac':
+      case 'aac':
+        return { name: 'musical-note', color: '#d97706' };
       case 'zip':
       case 'rar':
-        return { name: 'archive', color: '#64748b' };
+      case '7z':
+      case 'tar':
+        return { name: 'archive-box', color: '#6b7280' };
+      case 'txt':
+        return { name: 'document-text', color: '#374151' };
       default:
-        return { name: 'document-outline', color: theme.colors.textSecondary };
+        return { name: 'document', color: '#6b7280' };
     }
   };
 

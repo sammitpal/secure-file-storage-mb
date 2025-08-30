@@ -40,9 +40,9 @@ const USER_KEY = 'currentUser';
  */
 export const debugTokenState = async () => {
   try {
-    const token = await SecureStore.getItemAsync(TOKEN_KEY);
-    const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
-    const userStr = await SecureStore.getItemAsync(USER_KEY);
+    const token = await storage.getItem(TOKEN_KEY);
+    const refreshToken = await storage.getItem(REFRESH_TOKEN_KEY);
+    const userStr = await storage.getItem(USER_KEY);
     
     const tokenInfo = {
       hasToken: !!token,
@@ -168,7 +168,7 @@ export const debugAuthentication = async () => {
   console.log('🔍 Starting comprehensive auth debug...');
   
   const tokenInfo = await debugTokenState();
-  const token = await SecureStore.getItemAsync(TOKEN_KEY);
+  const token = await storage.getItem(TOKEN_KEY);
   const decodedToken = decodeJWT(token);
   const validityTest = await testTokenValidity();
   

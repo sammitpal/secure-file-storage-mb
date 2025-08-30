@@ -3,6 +3,34 @@ import { useColorScheme, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Cross-platform storage wrapper
+const isWeb = Platform.OS === 'web';
+const storage = {
+  async getItem(key) {
+    try {
+      if (isWeb) {
+        return await AsyncStorage.getItem(key);
+      } else {
+        return await SecureStore.getItemAsync(key);
+      }
+    } catch (error) {
+      console.error(`Error getting ${key}:`, error);
+      return null;
+    }
+  },
+  async setItem(key, value) {
+    try {
+      if (isWeb) {
+        await AsyncStorage.setItem(key, value);
+      } else {
+        await SecureStore.setItemAsync(key, value);
+      }
+    } catch (error) {
+      console.error(`Error setting ${key}:`, error);
+    }
+  }
+};
+
 const ThemeContext = createContext({});
 
 export const useTheme = () => {
@@ -92,7 +120,7 @@ export const ThemeProvider = ({ children }) => {
 
   const loadThemePreference = async () => {
     try {
-      const savedTheme = await SecureStore.getItemAsync(THEME_KEY);
+      const savedTheme = await storage.getItem(THEME_KEY);
       if (savedTheme) {
         const themeData = JSON.parse(savedTheme);
         setIsDarkMode(themeData.isDarkMode);
@@ -105,7 +133,7 @@ export const ThemeProvider = ({ children }) => {
 
   const saveThemePreference = async (darkMode, systemTheme) => {
     try {
-      await SecureStore.setItemAsync(THEME_KEY, JSON.stringify({
+      await storage.setItem(THEME_KEY, JSON.stringify({
         isDarkMode: darkMode,
         isSystemTheme: systemTheme
       }));
