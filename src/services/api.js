@@ -301,10 +301,14 @@ api.interceptors.response.use(
               refreshToken: refreshToken
             });
             
-            if (response.data.success && response.data.data.accessToken) {
-              await setAuthToken(response.data.data.accessToken);
-              if (response.data.data.refreshToken) {
-                await setRefreshToken(response.data.data.refreshToken);
+            // Backend returns 'token' but we expect 'accessToken'
+            const newToken = response.data.data.token || response.data.data.accessToken;
+            const newRefreshToken = response.data.data.refreshToken;
+            
+            if (response.data.success && newToken) {
+              await setAuthToken(newToken);
+              if (newRefreshToken) {
+                await setRefreshToken(newRefreshToken);
               }
               
               if (__DEV__) {
@@ -312,7 +316,7 @@ api.interceptors.response.use(
               }
               
               // Retry original request with new token
-              originalRequest.headers.Authorization = `Bearer ${response.data.data.accessToken}`;
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
               return api(originalRequest);
             }
           } catch (refreshError) {
@@ -369,9 +373,30 @@ export const authApi = {
     try {
       const response = await api.post('/auth/register', userData);
       if (response.data.success && response.data.data) {
-        await setAuthToken(response.data.data.accessToken);
-        await setRefreshToken(response.data.data.refreshToken);
-        await setCurrentUser(response.data.data.user);
+        // Backend returns 'token' but we expect 'accessToken'
+        const token = response.data.data.token || response.data.data.accessToken;
+        const refreshToken = response.data.data.refreshToken;
+        
+        if (token) {
+          await setAuthToken(token);
+          if (__DEV__) {
+            console.log('✅ Register: Token saved successfully');
+          }
+        }
+        
+        if (refreshToken) {
+          await setRefreshToken(refreshToken);
+          if (__DEV__) {
+            console.log('✅ Register: Refresh token saved successfully');
+          }
+        }
+        
+        if (response.data.data.user) {
+          await setCurrentUser(response.data.data.user);
+          if (__DEV__) {
+            console.log('✅ Register: User data saved successfully');
+          }
+        }
       }
       return response.data;
     } catch (error) {
@@ -384,9 +409,35 @@ export const authApi = {
     try {
       const response = await api.post('/auth/login', credentials);
       if (response.data.success && response.data.data) {
-        await setAuthToken(response.data.data.accessToken);
-        await setRefreshToken(response.data.data.refreshToken);
-        await setCurrentUser(response.data.data.user);
+        // Backend returns 'token' but we expect 'accessToken'
+        const token = response.data.data.token || response.data.data.accessToken;
+        const refreshToken = response.data.data.refreshToken;
+        
+        if (token) {
+          await setAuthToken(token);
+          if (__DEV__) {
+            console.log('✅ Login: Token saved successfully', {
+              tokenLength: token.length,
+              tokenPreview: token.substring(0, 20) + '...'
+            });
+          }
+        }
+        
+        if (refreshToken) {
+          await setRefreshToken(refreshToken);
+          if (__DEV__) {
+            console.log('✅ Login: Refresh token saved successfully');
+          }
+        }
+        
+        if (response.data.data.user) {
+          await setCurrentUser(response.data.data.user);
+          if (__DEV__) {
+            console.log('✅ Login: User data saved successfully', {
+              username: response.data.data.user.username
+            });
+          }
+        }
       }
       return response.data;
     } catch (error) {
@@ -427,9 +478,15 @@ export const authApi = {
     try {
       const response = await api.post('/auth/refresh', { refreshToken });
       if (response.data.success && response.data.data) {
-        await setAuthToken(response.data.data.accessToken);
-        if (response.data.data.refreshToken) {
-          await setRefreshToken(response.data.data.refreshToken);
+        // Backend returns 'token' but we expect 'accessToken'
+        const token = response.data.data.token || response.data.data.accessToken;
+        const newRefreshToken = response.data.data.refreshToken;
+        
+        if (token) {
+          await setAuthToken(token);
+        }
+        if (newRefreshToken) {
+          await setRefreshToken(newRefreshToken);
         }
       }
       return response.data;
