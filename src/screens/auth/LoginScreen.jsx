@@ -17,7 +17,6 @@ import { BlurView } from 'expo-blur';
 import * as Animatable from 'react-native-animatable';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import NetworkDebugger from '../../components/NetworkDebugger';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,7 +29,6 @@ const LoginScreen = ({ navigation }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const [showNetworkDebugger, setShowNetworkDebugger] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -108,16 +106,6 @@ const LoginScreen = ({ navigation }) => {
               Sign in to your secure file storage account
             </Text>
             
-            {/* Network Debug Button - Development Only */}
-            {__DEV__ && (
-              <TouchableOpacity
-                style={styles.debugButton}
-                onPress={() => setShowNetworkDebugger(true)}
-              >
-                <Ionicons name="bug-outline" size={16} color={theme.colors.textSecondary} />
-                <Text style={styles.debugButtonText}>Network Debug</Text>
-              </TouchableOpacity>
-            )}
           </Animatable.View>
 
           {/* Login Form */}
@@ -237,34 +225,12 @@ const LoginScreen = ({ navigation }) => {
                     />
                   </TouchableOpacity>
                 </View>
-
-                {/* Network Debug Link (Development Only) */}
-                {__DEV__ && (
-                  <View style={styles.networkTestContainer}>
-                    <TouchableOpacity
-                      onPress={() => setShowNetworkDebugger(true)}
-                      style={styles.networkTestLink}
-                    >
-                      <Ionicons 
-                        name="bug-outline" 
-                        size={16} 
-                        color={theme.colors.textSecondary} 
-                      />
-                      <Text style={styles.networkTestText}>Network Debug</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
               </View>
             </BlurView>
           </Animatable.View>
         </ScrollView>
       </LinearGradient>
       
-      {/* Network Debugger - Development Only */}
-      <NetworkDebugger 
-        visible={showNetworkDebugger}
-        onClose={() => setShowNetworkDebugger(false)}
-      />
     </KeyboardAvoidingView>
   );
 };
@@ -432,21 +398,6 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: '600',
     marginRight: theme.spacing.xs,
-  },
-  networkTestContainer: {
-    alignItems: 'center',
-    marginTop: theme.spacing.md,
-  },
-  networkTestLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-  },
-  networkTestText: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.fontSize.sm,
-    marginLeft: theme.spacing.xs,
   },
 });
 

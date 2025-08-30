@@ -5,15 +5,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
   Switch,
-  Alert
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import AuthDebugger from '../../components/AuthDebugger';
+
 
 const ProfileScreen = () => {
   const { user, logout } = useAuth();
@@ -262,12 +263,6 @@ const ProfileScreen = () => {
         </Text>
       </View>
 
-      {/* Auth Debugger - Development Only */}
-      {__DEV__ && (
-        <Animatable.View animation="fadeInUp" delay={700}>
-          <AuthDebugger />
-        </Animatable.View>
-      )}
     </ScrollView>
   );
 };

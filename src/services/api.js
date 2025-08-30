@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { getApiBaseUrl, testNetworkConnection, debugNetworkConfig } from './networkConfig';
+import { getApiBaseUrl } from './networkConfig';
 
 // Cross-platform storage solution
 import * as SecureStore from 'expo-secure-store';
@@ -59,7 +59,7 @@ if (__DEV__) {
   console.log('🚀 Initializing API service...');
   console.log(`📱 Platform: ${Platform.OS}`);
   console.log(`💾 Storage: ${isWeb ? 'AsyncStorage (Web)' : 'SecureStore (Mobile)'}`);
-  debugNetworkConfig();
+
 }
 
 // Network error helper
