@@ -162,20 +162,46 @@ const FilesScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('🗑️ Deleting file:', file);
+              
+              // Check if s3Key exists
+              if (!file.s3Key) {
+                console.error('❌ No s3Key found in file object');
+                Toast.show({
+                  type: 'error',
+                  text1: 'Delete Failed',
+                  text2: 'File key not found'
+                });
+                return;
+              }
+              
               // Extract the file key from s3Key (remove users/{userId}/ prefix)
               const fileKey = file.s3Key.split('/').slice(2).join('/');
+              console.log('🔑 File key for deletion:', fileKey);
+              
+              if (!fileKey) {
+                console.error('❌ Empty file key after processing');
+                Toast.show({
+                  type: 'error',
+                  text1: 'Delete Failed',
+                  text2: 'Invalid file key'
+                });
+                return;
+              }
+              
               await filesApi.deleteFile(fileKey);
               Toast.show({
                 type: 'success',
                 text1: 'Deleted',
-                text2: `${file.originalName} has been deleted`
+                text2: `${file.originalName || file.name} has been deleted`
               });
               fetchData();
             } catch (error) {
+              console.error('❌ Delete error:', error);
               Toast.show({
                 type: 'error',
                 text1: 'Delete Failed',
-                text2: 'Could not delete file'
+                text2: error.message || 'Could not delete file'
               });
             }
           }

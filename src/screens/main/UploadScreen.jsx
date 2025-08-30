@@ -7,7 +7,10 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Animatable from 'react-native-animatable';
 // import { Progress } from 'react-native-progress'; // Commented out due to web compatibility issues
 import { useTheme } from '../../contexts/ThemeContext';
-import { filesApi } from '../../services/api';
+import { filesApi, foldersApi } from '../../services/api';
 import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
@@ -27,6 +30,9 @@ const UploadScreen = ({ navigation, route }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [currentFolderPath, setCurrentFolderPath] = useState('');
+  const [showFolderSelector, setShowFolderSelector] = useState(false);
+  const [availableFolders, setAvailableFolders] = useState([]);
+  const [loadingFolders, setLoadingFolders] = useState(false);
 
   // Get current folder path from route params or AsyncStorage
   useEffect(() => {
@@ -49,6 +55,49 @@ const UploadScreen = ({ navigation, route }) => {
     
     getCurrentPath();
   }, [route?.params?.currentFolderPath]);
+
+  // Load available folders for selection
+  const loadFolders = async () => {
+    setLoadingFolders(true);
+    try {
+      const response = await foldersApi.listFolders('');
+      const folders = response.data?.folders || [];
+      // Add root folder option
+      setAvailableFolders([
+        { name: 'Root Folder', path: '', id: 'root' },
+        ...folders.map(folder => ({
+          name: folder.name,
+          path: folder.path || folder.name,
+          id: folder.id || folder._id
+        }))
+      ]);
+    } catch (error) {
+      console.error('Error loading folders:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not load folders'
+      });
+    } finally {
+      setLoadingFolders(false);
+    }
+  };
+
+  // Select folder for upload
+  const selectFolder = (folder) => {
+    setCurrentFolderPath(folder.path);
+    setShowFolderSelector(false);
+    
+    // Save to AsyncStorage for persistence
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    AsyncStorage.setItem('currentFolderPath', folder.path);
+    
+    Toast.show({
+      type: 'success',
+      text1: 'Folder Selected',
+      text2: `Files will be uploaded to: ${folder.name}`
+    });
+  };
 
   const pickDocument = async () => {
     try {
@@ -233,10 +282,22 @@ const UploadScreen = ({ navigation, route }) => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Current Folder Display */}
       <View style={styles.currentFolderContainer}>
-        <Ionicons name="folder" size={20} color={theme.colors.primary} />
-        <Text style={styles.currentFolderText}>
-          Uploading to: {currentFolderPath || 'Root Folder'}
-        </Text>
+        <View style={styles.folderInfo}>
+          <Ionicons name="folder" size={20} color={theme.colors.primary} />
+          <Text style={styles.currentFolderText}>
+            Uploading to: {currentFolderPath || 'Root Folder'}
+          </Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.changeFolderButton}
+          onPress={() => {
+            loadFolders();
+            setShowFolderSelector(true);
+          }}
+        >
+          <Ionicons name="create" size={16} color={theme.colors.primary} />
+          <Text style={styles.changeFolderText}>Change</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Upload Options */}
@@ -412,6 +473,70 @@ const UploadScreen = ({ navigation, route }) => {
         </View>
       </View>
     </ScrollView>
+
+    {/* Folder Selector Modal */}
+    <Modal
+      visible={showFolderSelector}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowFolderSelector(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContainer, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+              Select Upload Folder
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowFolderSelector(false)}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {loadingFolders ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+              <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+                Loading folders...
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={availableFolders}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.folderItem,
+                    { borderBottomColor: theme.colors.border },
+                    currentFolderPath === item.path && styles.selectedFolderItem
+                  ]}
+                  onPress={() => selectFolder(item)}
+                >
+                  <Ionicons 
+                    name={item.path === '' ? 'home' : 'folder'} 
+                    size={20} 
+                    color={currentFolderPath === item.path ? theme.colors.primary : theme.colors.text} 
+                  />
+                  <Text style={[
+                    styles.folderItemText, 
+                    { color: currentFolderPath === item.path ? theme.colors.primary : theme.colors.text }
+                  ]}>
+                    {item.name}
+                  </Text>
+                  {currentFolderPath === item.path && (
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              )}
+              style={styles.folderList}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
   );
 };
 
@@ -590,6 +715,57 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
     color: theme.colors.text,
     marginLeft: 8,
     fontWeight: '500',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    maxHeight: '70%',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    padding: theme.spacing.xs,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  loadingText: {
+    marginTop: theme.spacing.md,
+    fontSize: theme.fontSize.md,
+  },
+  folderList: {
+    maxHeight: 300,
+  },
+  folderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    borderBottomWidth: 1,
+  },
+  selectedFolderItem: {
+    backgroundColor: theme.colors.primary + '20',
+  },
+  folderItemText: {
+    flex: 1,
+    marginLeft: theme.spacing.md,
+    fontSize: theme.fontSize.md,
   },
 });
 
