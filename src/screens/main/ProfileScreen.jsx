@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import AuthDebugger from '../../components/AuthDebugger';
 
 const ProfileScreen = () => {
   const { user, logout } = useAuth();
@@ -260,6 +261,13 @@ const ProfileScreen = () => {
           Last login: {formatDate(user?.lastLogin)}
         </Text>
       </View>
+
+      {/* Auth Debugger - Development Only */}
+      {__DEV__ && (
+        <Animatable.View animation="fadeInUp" delay={700}>
+          <AuthDebugger />
+        </Animatable.View>
+      )}
     </ScrollView>
   );
 };

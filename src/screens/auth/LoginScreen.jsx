@@ -17,6 +17,7 @@ import { BlurView } from 'expo-blur';
 import * as Animatable from 'react-native-animatable';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import NetworkDebugger from '../../components/NetworkDebugger';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ const LoginScreen = ({ navigation }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showNetworkDebugger, setShowNetworkDebugger] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -105,6 +107,17 @@ const LoginScreen = ({ navigation }) => {
             <Text style={styles.subtitle}>
               Sign in to your secure file storage account
             </Text>
+            
+            {/* Network Debug Button - Development Only */}
+            {__DEV__ && (
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={() => setShowNetworkDebugger(true)}
+              >
+                <Ionicons name="bug-outline" size={16} color={theme.colors.textSecondary} />
+                <Text style={styles.debugButtonText}>Network Debug</Text>
+              </TouchableOpacity>
+            )}
           </Animatable.View>
 
           {/* Login Form */}
@@ -225,19 +238,19 @@ const LoginScreen = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Network Test Link (Development Only) */}
+                {/* Network Debug Link (Development Only) */}
                 {__DEV__ && (
                   <View style={styles.networkTestContainer}>
                     <TouchableOpacity
-                      onPress={() => navigation.navigate('NetworkTest')}
+                      onPress={() => setShowNetworkDebugger(true)}
                       style={styles.networkTestLink}
                     >
                       <Ionicons 
-                        name="wifi-outline" 
+                        name="bug-outline" 
                         size={16} 
                         color={theme.colors.textSecondary} 
                       />
-                      <Text style={styles.networkTestText}>Network Test</Text>
+                      <Text style={styles.networkTestText}>Network Debug</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -246,6 +259,12 @@ const LoginScreen = ({ navigation }) => {
           </Animatable.View>
         </ScrollView>
       </LinearGradient>
+      
+      {/* Network Debugger - Development Only */}
+      <NetworkDebugger 
+        visible={showNetworkDebugger}
+        onClose={() => setShowNetworkDebugger(false)}
+      />
     </KeyboardAvoidingView>
   );
 };
