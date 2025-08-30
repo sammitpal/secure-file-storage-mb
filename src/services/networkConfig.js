@@ -15,7 +15,7 @@ import { Platform } from 'react-native';
 const DEVELOPMENT_CONFIG = {
   // Replace with your actual machine's IP address
   // Common examples: '192.168.1.100', '192.168.0.50', '10.0.0.100'
-  YOUR_MACHINE_IP: 'localhost', // ⚠️ UPDATE THIS WITH YOUR ACTUAL IP
+  YOUR_MACHINE_IP: '192.168.1.9', // ⚠️ UPDATE THIS WITH YOUR ACTUAL IP
   
   // Backend server port (update if your backend runs on a different port)
   BACKEND_PORT: '3001',
