@@ -8,7 +8,8 @@ import {
   RefreshControl,
   Alert,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
@@ -24,6 +25,7 @@ const FilesScreen = () => {
   const { theme } = useTheme();
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,6 +45,7 @@ const FilesScreen = () => {
       if (response.success && response.data) {
         setFiles(response.data.files || []);
         setFolders(response.data.folders || []);
+        setAllItems(response.data.items || []);
         setStats(response.data.stats || { totalFiles: 0, totalSize: 0, totalFolders: 0 });
       }
     } catch (error) {
@@ -83,7 +86,9 @@ const FilesScreen = () => {
         text2: `Preparing ${file.originalName}`
       });
 
-      const response = await filesApi.getDownloadUrl(file.s3Key.split('/').pop());
+      // Extract the file key from s3Key (remove users/{userId}/ prefix)
+      const fileKey = file.s3Key.split('/').slice(2).join('/');
+      const response = await filesApi.getDownloadUrl(fileKey);
       
       if (response.success && response.downloadUrl) {
         const fileUri = FileSystem.documentDirectory + file.originalName;
@@ -123,7 +128,8 @@ const FilesScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const fileKey = file.s3Key.split('/').pop();
+              // Extract the file key from s3Key (remove users/{userId}/ prefix)
+              const fileKey = file.s3Key.split('/').slice(2).join('/');
               await filesApi.deleteFile(fileKey);
               Toast.show({
                 type: 'success',
@@ -178,7 +184,7 @@ const FilesScreen = () => {
 
   const shareFile = async (file) => {
     try {
-      const response = await filesApi.shareFile(file._id);
+      const response = await filesApi.shareFile(file._id || file.id);
       if (response.success && response.data.shareUrl) {
         Toast.show({
           type: 'success',
@@ -186,9 +192,23 @@ const FilesScreen = () => {
           text2: 'Link copied to clipboard'
         });
         
-        // You can implement clipboard functionality here
-        // import * as Clipboard from 'expo-clipboard';
-        // await Clipboard.setStringAsync(response.data.shareUrl);
+        // Copy to clipboard (for web, we'll use a simple alert with the URL)
+        if (Platform.OS === 'web') {
+          // For web, show the URL in an alert
+          Alert.alert(
+            'Share Link Created',
+            `Share URL: ${response.data.shareUrl}`,
+            [
+              { text: 'Copy URL', onPress: () => {
+                // Try to copy to clipboard on web
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(response.data.shareUrl);
+                }
+              }},
+              { text: 'OK' }
+            ]
+          );
+        }
       }
     } catch (error) {
       Toast.show({
@@ -248,7 +268,7 @@ const FilesScreen = () => {
   };
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -256,7 +276,9 @@ const FilesScreen = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -371,7 +393,7 @@ const FilesScreen = () => {
     </View>
   );
 
-  const allItems = [...folders, ...files];
+
 
   const styles = createStyles(theme);
 
