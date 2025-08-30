@@ -114,25 +114,39 @@ const FilesScreen = () => {
 
   const downloadFile = async (file) => {
     try {
+      console.log('🔽 Downloading file:', file);
+      
+      // Use the path property which contains the file key (already without users/{userId}/ prefix)
+      const fileKey = file.path;
+      console.log('🔑 File key for download:', fileKey);
+      
+      if (!fileKey) {
+        console.error('❌ No file path found in file object');
+        Toast.show({
+          type: 'error',
+          text1: 'Download Failed',
+          text2: 'File path not found'
+        });
+        return;
+      }
+
       Toast.show({
         type: 'info',
         text1: 'Downloading...',
-        text2: `Preparing ${file.originalName}`
+        text2: `Preparing ${file.originalName || file.name}`
       });
-
-      // Extract the file key from s3Key (remove users/{userId}/ prefix)
-      const fileKey = file.s3Key.split('/').slice(2).join('/');
+      
       const response = await filesApi.getDownloadUrl(fileKey);
       
       if (response.success && response.downloadUrl) {
-        const fileUri = FileSystem.documentDirectory + file.originalName;
+        const fileUri = FileSystem.documentDirectory + (file.originalName || file.name);
         const downloadResult = await FileSystem.downloadAsync(response.downloadUrl, fileUri);
         
         if (downloadResult.status === 200) {
           Toast.show({
             type: 'success',
             text1: 'Downloaded',
-            text2: `${file.originalName} saved to device`
+            text2: `${file.originalName || file.name} saved to device`
           });
           
           // Share the file
@@ -142,11 +156,11 @@ const FilesScreen = () => {
         }
       }
     } catch (error) {
-      console.error('Download error:', error);
+      console.error('❌ Download error:', error);
       Toast.show({
         type: 'error',
         text1: 'Download Failed',
-        text2: 'Could not download file'
+        text2: error.message || 'Could not download file'
       });
     }
   };
@@ -164,27 +178,16 @@ const FilesScreen = () => {
             try {
               console.log('🗑️ Deleting file:', file);
               
-              // Check if s3Key exists
-              if (!file.s3Key) {
-                console.error('❌ No s3Key found in file object');
-                Toast.show({
-                  type: 'error',
-                  text1: 'Delete Failed',
-                  text2: 'File key not found'
-                });
-                return;
-              }
-              
-              // Extract the file key from s3Key (remove users/{userId}/ prefix)
-              const fileKey = file.s3Key.split('/').slice(2).join('/');
+              // Use the path property which contains the file key (already without users/{userId}/ prefix)
+              const fileKey = file.path;
               console.log('🔑 File key for deletion:', fileKey);
               
               if (!fileKey) {
-                console.error('❌ Empty file key after processing');
+                console.error('❌ No file path found in file object');
                 Toast.show({
                   type: 'error',
                   text1: 'Delete Failed',
-                  text2: 'Invalid file key'
+                  text2: 'File path not found'
                 });
                 return;
               }
