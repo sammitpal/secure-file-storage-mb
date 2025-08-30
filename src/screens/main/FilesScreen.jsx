@@ -41,7 +41,7 @@ const FilesScreen = () => {
     fetchData();
   }, [currentFolderPath]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       const response = await filesApi.listFiles(currentFolderPath);
@@ -51,6 +51,39 @@ const FilesScreen = () => {
         setFolders(response.data.folders || []);
         setAllItems(response.data.items || []);
         setStats(response.data.stats || { totalFiles: 0, totalSize: 0, totalFolders: 0 });
+        
+        // Debug logging to help identify path format issues
+        console.log('📋 [DEBUG] API Response:', {
+          filesCount: response.data.files?.length || 0,
+          foldersCount: response.data.folders?.length || 0,
+          itemsCount: response.data.items?.length || 0
+        });
+        
+        if (response.data.items && response.data.items.length > 0) {
+          console.log('📋 [DEBUG] Sample items structure:');
+          response.data.items.slice(0, 3).forEach((item, index) => {
+            console.log(`📋 [DEBUG] Item ${index}:`, {
+              type: item.type,
+              name: item.name,
+              path: item.path,
+              id: item.id,
+              size: item.size
+            });
+          });
+        }
+        
+        // Also log the files array structure for comparison
+        if (response.data.files && response.data.files.length > 0) {
+          console.log('📋 [DEBUG] Sample files structure:');
+          response.data.files.slice(0, 3).forEach((file, index) => {
+            console.log(`📋 [DEBUG] File ${index}:`, {
+              id: file.id,
+              name: file.name,
+              path: file.path,
+              s3Key: file.s3Key
+            });
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching files:', error);
@@ -61,8 +94,9 @@ const FilesScreen = () => {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [currentFolderPath]);
+  };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -115,10 +149,20 @@ const FilesScreen = () => {
   const downloadFile = async (file) => {
     try {
       console.log('🔽 Downloading file:', file);
+      console.log('🔽 File properties:', {
+        id: file.id,
+        name: file.name,
+        originalName: file.originalName,
+        path: file.path,
+        type: file.type,
+        size: file.size
+      });
       
       // Use the path property which contains the file key (already without users/{userId}/ prefix)
       const fileKey = file.path;
       console.log('🔑 File key for download:', fileKey);
+      console.log('🔑 File key type:', typeof fileKey);
+      console.log('🔑 File key length:', fileKey?.length);
       
       if (!fileKey) {
         console.error('❌ No file path found in file object');
@@ -136,7 +180,9 @@ const FilesScreen = () => {
         text2: `Preparing ${file.originalName || file.name}`
       });
       
+      console.log('📡 Making API call to getDownloadUrl with fileKey:', fileKey);
       const response = await filesApi.getDownloadUrl(fileKey);
+      console.log('📡 API response:', response);
       
       if (response.success && response.downloadUrl) {
         const fileUri = FileSystem.documentDirectory + (file.originalName || file.name);
@@ -157,10 +203,15 @@ const FilesScreen = () => {
       }
     } catch (error) {
       console.error('❌ Download error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       Toast.show({
         type: 'error',
         text1: 'Download Failed',
-        text2: error.message || 'Could not download file'
+        text2: error.response?.data?.message || error.message || 'Could not download file'
       });
     }
   };
@@ -177,10 +228,20 @@ const FilesScreen = () => {
           onPress: async () => {
             try {
               console.log('🗑️ Deleting file:', file);
+              console.log('🗑️ File properties:', {
+                id: file.id,
+                name: file.name,
+                originalName: file.originalName,
+                path: file.path,
+                type: file.type,
+                size: file.size
+              });
               
               // Use the path property which contains the file key (already without users/{userId}/ prefix)
               const fileKey = file.path;
               console.log('🔑 File key for deletion:', fileKey);
+              console.log('🔑 File key type:', typeof fileKey);
+              console.log('🔑 File key length:', fileKey?.length);
               
               if (!fileKey) {
                 console.error('❌ No file path found in file object');
@@ -192,7 +253,10 @@ const FilesScreen = () => {
                 return;
               }
               
+              console.log('📡 Making API call to deleteFile with fileKey:', fileKey);
               await filesApi.deleteFile(fileKey);
+              console.log('✅ Delete API call successful');
+              
               Toast.show({
                 type: 'success',
                 text1: 'Deleted',
@@ -201,10 +265,15 @@ const FilesScreen = () => {
               fetchData();
             } catch (error) {
               console.error('❌ Delete error:', error);
+              console.error('❌ Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+              });
               Toast.show({
                 type: 'error',
                 text1: 'Delete Failed',
-                text2: error.message || 'Could not delete file'
+                text2: error.response?.data?.message || error.message || 'Could not delete file'
               });
             }
           }
