@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Animatable from 'react-native-animatable';
-import { Progress } from 'react-native-progress';
+// import { Progress } from 'react-native-progress'; // Commented out due to web compatibility issues
 import { useTheme } from '../../contexts/ThemeContext';
 import { filesApi } from '../../services/api';
 import Toast from 'react-native-toast-message';
@@ -317,15 +317,18 @@ const UploadScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Uploading Files...</Text>
           
           <View style={styles.progressContainer}>
-            <Progress.Bar
-              progress={uploadProgress / 100}
-              width={width - 64}
-              height={8}
-              color={theme.colors.primary}
-              unfilledColor={theme.colors.border}
-              borderWidth={0}
-              borderRadius={4}
-            />
+            {/* Custom Progress Bar for Web Compatibility */}
+            <View style={[styles.progressBar, { width: width - 64 }]}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { 
+                    width: `${uploadProgress}%`,
+                    backgroundColor: theme.colors.primary 
+                  }
+                ]} 
+              />
+            </View>
             <Text style={styles.progressText}>{Math.round(uploadProgress)}%</Text>
           </View>
         </Animatable.View>
@@ -530,6 +533,17 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
     color: theme.colors.text,
     marginLeft: theme.spacing.sm,
     flex: 1,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: theme.colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+    transition: 'width 0.3s ease',
   },
 });
 

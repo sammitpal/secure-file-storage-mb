@@ -351,9 +351,11 @@ const FilesScreen = () => {
               <Ionicons name={fileIcon.name} size={24} color={fileIcon.color} />
             </View>
             <View style={styles.itemInfo}>
-              <Text style={styles.itemName} numberOfLines={1}>{item.originalName}</Text>
+              <Text style={styles.itemName} numberOfLines={1}>
+                {item.originalName || item.name || 'Unknown file'}
+              </Text>
               <Text style={styles.itemDetails}>
-                {formatFileSize(item.size)} • {formatDate(item.uploadedAt)}
+                {formatFileSize(item.size)} • {formatDate(item.uploadedAt || item.createdAt || item.lastModified)}
               </Text>
             </View>
           </View>
